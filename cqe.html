@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>供应商门户 - 登录后弹窗</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+        background: #f5f7fa;
+        padding: 40px 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      /* 弹窗 */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .modal-box {
+        background: white;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 700px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        padding: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+      }
+
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f8f9fa;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        margin: 4px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .add-btn {
+        background: #52c41a;
+        color: white;
+      }
+      .del-btn {
+        background: #ff4d4f;
+        color: white;
+      }
+      .submit-btn {
+        width: 100%;
+        padding: 12px;
+        background: #1890ff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        margin-top: 10px;
+      }
+
+      .note {
+        color: red;
+        font-size: 14px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="container">
+        <div class="card" v-if="!isLoggedIn">
+          <h2>请先登录</h2>
+          <p>您需要登录后才能访问系统功能。</p>
+          <button
+            class="btn"
+            style="background: #1890ff; color: white"
+            @click="login"
+          >
+            模拟登录
+          </button>
+        </div>
+
+        <div class="card" v-else>
+          <h2>欢迎，{{ username }}！</h2>
+          <p>您已成功登录系统。</p>
+          <button
+            class="btn"
+            style="background: #6c757d; color: white"
+            @click="logout"
+          >
+            退出登录
+          </button>
+        </div>
+      </div>
+
+      <!-- CQE 弹窗（仅在已登录且未提交时显示） -->
+      <teleport to="body">
+        <div v-if="showCqeModal" class="modal-backdrop">
+          <div class="modal-box">
+            <h3 style="text-align: center; margin-bottom: 15px">
+              合同执行中供应商主要联系人信息
+            </h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>对接人员</th>
+                  <th>职位</th>
+                  <th>联系电话</th>
+                  <th>是否区分项目</th>
+                  <th style="width: 80px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, index) in formData" :key="index">
+                  <td>
+                    <input v-model="row.cqe" type="text" placeholder="姓名" />
+                  </td>
+                  <td>
+                    <input
+                      v-model="row.position"
+                      type="text"
+                      placeholder="如：质量工程师/项目经理"
+                    />
+                  </td>
+                  <td>
+                    <input v-model="row.phone" type="tel" placeholder="电话" />
+                  </td>
+                  <td>
+                    <select v-model="row.isProjectSpecific">
+                      <option value="" disabled>请选择</option>
+                      <option value="是">是</option>
+                      <option value="否">否</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      v-if="formData.length > 1"
+                      class="btn del-btn"
+                      @click="removeRow(index)"
+                    >
+                      删除
+                    </button>
+                    <span v-else>—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <button class="btn add-btn" @click="addRow">+ 新增一行</button>
+            <div class="note">提醒：所有字段均为必填；人员变动须及时更新</div>
+            <button class="submit-btn" @click="handleSubmit">提交信息</button>
+          </div>
+        </div>
+      </teleport>
+    </div>
+
+    <script type="module">
+      const { createApp, ref, reactive, watch } = Vue;
+
+      // 模拟用户登录状态管理
+      function useAuth() {
+        const isLoggedIn = ref(false);
+        const username = ref("");
+
+        const checkLogin = () => {
+          const token = localStorage.getItem("mock_token");
+          const user = localStorage.getItem("mock_user");
+          if (token && user) {
+            isLoggedIn.value = true;
+            username.value = user;
+          }
+        };
+
+        const login = () => {
+          localStorage.setItem("mock_token", "fake-token");
+          localStorage.setItem("mock_user", "示例供应商");
+          checkLogin();
+        };
+
+        const logout = () => {
+          localStorage.removeItem("mock_token");
+          localStorage.removeItem("mock_user");
+          isLoggedIn.value = false;
+          username.value = "";
+        };
+
+        checkLogin(); // 初始化时检查
+
+        return { isLoggedIn, username, login, logout };
+      }
+
+      createApp({
+        setup() {
+          const { isLoggedIn, username, login, logout } = useAuth();
+
+          // 控制 CQE 弹窗显示（仅登录后显示）
+          const showCqeModal = ref(false);
+
+          // 表单数据
+          const formData = reactive([
+            { cqe: "", position: "", phone: "", isProjectSpecific: "" },
+          ]);
+
+          // 监听登录状态：一旦登录，自动弹出 CQE 弹窗
+          watch(isLoggedIn, (newVal) => {
+            if (newVal) {
+              // 可在此处加一个“是否已提交”的判断（本例默认每次登录都弹）
+              showCqeModal.value = true;
+            }
+          });
+
+          const addRow = () => {
+            formData.push({
+              cqe: "",
+              position: "",
+              phone: "",
+              isProjectSpecific: "",
+            });
+          };
+
+          const removeRow = (index) => {
+            if (formData.length <= 1) return;
+            formData.splice(index, 1);
+          };
+
+          const handleSubmit = () => {
+            const valid = formData.every(
+              (row) =>
+                row.cqe.trim() &&
+                row.position.trim() &&
+                row.phone.trim() &&
+                row.isProjectSpecific
+            );
+
+            if (!valid) {
+              alert("请确保所有字段均已填写！");
+              return;
+            }
+
+            alert(`成功提交 ${formData.length} 条记录！`);
+            showCqeModal.value = false;
+
+            // 可选：标记已提交（避免重复弹窗）
+            localStorage.setItem("cqe_submitted", "true");
+          };
+
+          return {
+            isLoggedIn,
+            username,
+            login,
+            logout,
+            showCqeModal,
+            formData,
+            addRow,
+            removeRow,
+            handleSubmit,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

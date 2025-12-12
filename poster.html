@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ProductName}} {{SalesMonth}} 批量指导价</title>
+    <style>
+      body {
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+        margin: 0;
+        padding: 40px 20px;
+        color: #ffffff; /* 全局文字颜色设为白色 */
+        line-height: 1.5;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background-color: #2d529f; /* 修改为深蓝色 */
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: #ffffff; /* 确保文字颜色与背景对比明显，这里设为白色 */
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+      .header h1 {
+        font-size: 22px;
+        font-weight: bold;
+        margin: 0;
+        color: #ffffff; /* 标题文字颜色改为白色 */
+      }
+      .table-container {
+        width: 100%;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 14px;
+        color: #ffffff; /* 表格内文字颜色改为白色 */
+      }
+      th,
+      td {
+        border: 1px solid #999;
+        padding: 10px 8px;
+        text-align: center;
+        vertical-align: top;
+        background-color: #4a75cc; /* 给单元格一个浅一些的背景色以增强可读性 */
+      }
+      th {
+        background-color: #3b6fa0; /* 更深一点的颜色作为表头背景 */
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 15px;
+        border-top: 1px dashed #ccc;
+        font-size: 13px;
+        color: #ffffff; /* 底部文字颜色改为白色 */
+      }
+      .footer p {
+        margin: 4px 0;
+      }
+      @media print {
+        body {
+          padding: 20px;
+          background: #fff;
+        }
+        .container {
+          box-shadow: none;
+          border-radius: 0;
+          padding: 20px;
+        }
+        .header h1 {
+          color: #000;
+        }
+        table,
+        th,
+        td {
+          color: #000; /* 打印时恢复黑色文字 */
+        }
+        .footer {
+          color: #000;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>标题：{{ProductName}} {{SalesMonth}} 批量指导价</h1>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>销售数量/台</th>
+              <th>电量/Wh</th>
+              <th>Wh单价/元</th>
+              <th>售价/元</th>
+              <th>电芯</th>
+              <th>液冷机组</th>
+              <th>消防</th>
+              <th>管路</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each items}}
+            <tr>
+              <td>{{salesQuantity}}</td>
+              <td>{{electricity}}</td>
+              <td>{{whUnitPrice}}</td>
+              <td>{{price}}</td>
+              <td>{{battery}}</td>
+              <td>{{liquidCooling}}</td>
+              <td>{{fireProtection}}</td>
+              <td>{{pipeline}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <p><strong>建议付款方式：</strong>{{paymentMethod}}</p>
+        <p style="margin-top: 15px">
+          苏州精控能源科技股份有限公司<br />
+          地址：江苏省苏州市高新区联港路299号<br />
+          网址：www.ipotisedge.com &nbsp;&nbsp;&nbsp;&nbsp; 0512-66915889
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
